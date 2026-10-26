@@ -1,0 +1,11 @@
+{
+  "name": "taxi-platform",
+  "version": "0.6.0",
+  "private": true,
+  "description": "White-label платформа такси. Запуск без Docker: npm install && npm start",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "postinstall": "npm --prefix backend install --include=dev --no-audit --no-fund && npm --prefix backend run build",
+    "start": "node index.js"
+  }
+}

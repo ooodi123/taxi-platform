@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <title>Такси</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <div id="map" aria-label="Карта"></div>
+
+  <!-- Пин в центре карты: им выбирают точку -->
+  <div id="pin" class="pin" hidden aria-hidden="true">
+    <div class="pin-sign"><span class="pin-label">A</span></div>
+    <div class="pin-stem"></div>
+    <div class="pin-shadow"></div>
+  </div>
+
+  <button id="locate" class="locate" type="button" aria-label="Где я" hidden>
+    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm8.94 3A9 9 0 0 0 13 3.06V1h-2v2.06A9 9 0 0 0 3.06 11H1v2h2.06A9 9 0 0 0 11 20.94V23h2v-2.06A9 9 0 0 0 20.94 13H23v-2h-2.06ZM12 19a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z"/></svg>
+  </button>
+
+  <section id="sheet" class="sheet" aria-live="polite"></section>
+
+  <!-- Поиск адреса -->
+  <section id="search" class="search" hidden>
+    <div class="search-bar">
+      <button type="button" class="search-back" id="searchBack" aria-label="Назад">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M15.4 5.4 14 4l-8 8 8 8 1.4-1.4L8.8 12z"/></svg>
+      </button>
+      <input id="searchInput" type="search" autocomplete="off" enterkeyhint="search" placeholder="Улица, дом или место">
+    </div>
+    <button type="button" class="search-onmap" id="searchOnMap">Указать на карте</button>
+    <ul id="searchResults" class="search-results"></ul>
+  </section>
+
+  <div id="screen" class="screen" hidden></div>
+  <div id="toast" class="toast" role="status" hidden></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

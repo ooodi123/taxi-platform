@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Диспетчерская</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <link rel="stylesheet" href="dispatch.css">
+</head>
+<body>
+  <!-- Вход -->
+  <main id="login" class="login" hidden>
+    <form id="loginForm" class="login-card" autocomplete="on">
+      <div class="login-sign" aria-hidden="true"></div>
+      <h1>Диспетчерская</h1>
+      <label>Логин<input name="login" autocomplete="username" required></label>
+      <label>Пароль<input name="password" type="password" autocomplete="current-password" required></label>
+      <p class="form-error" id="loginError" hidden></p>
+      <button class="btn primary" type="submit">Войти</button>
+    </form>
+  </main>
+
+  <!-- Рабочее место -->
+  <div id="app" class="app" hidden>
+    <header class="topbar">
+      <div class="brand"><span class="brand-sign" aria-hidden="true"></span><span id="tenantName"></span></div>
+      <nav class="tabs" aria-label="Разделы">
+        <a href="#orders" data-view="orders">Заказы</a>
+        <a href="#drivers" data-view="drivers">Водители</a>
+        <a href="#tariffs" data-view="tariffs">Тарифы</a>
+        <a href="#settings" data-view="settings">Настройки</a>
+      </nav>
+      <div class="counters" id="counters" aria-live="polite"></div>
+      <div class="user">
+        <span id="userName"></span>
+        <button type="button" class="link" id="logoutBtn">Выйти</button>
+      </div>
+    </header>
+
+    <!-- Заказы: лента + карта + карточка -->
+    <section class="view orders-view" data-view="orders">
+      <aside class="feed">
+        <div class="feed-head">
+          <button type="button" class="btn primary" id="newOrderBtn">Новый заказ</button>
+          <div class="segmented" role="tablist">
+            <button type="button" role="tab" data-scope="active" aria-selected="true">Активные <b id="cntActive"></b></button>
+            <button type="button" role="tab" data-scope="today" aria-selected="false">Все за сегодня</button>
+          </div>
+        </div>
+        <ul class="feed-list" id="feed"></ul>
+      </aside>
+      <div class="map-wrap">
+        <div id="map"></div>
+        <div class="map-hint" id="mapHint" hidden></div>
+      </div>
+      <aside class="drawer" id="drawer" hidden></aside>
+    </section>
+
+    <section class="view page" data-view="drivers" hidden></section>
+    <section class="view page" data-view="tariffs" hidden></section>
+    <section class="view page" data-view="settings" hidden></section>
+  </div>
+
+  <dialog id="modal" class="modal"></dialog>
+  <div id="toast" class="toast" role="status" hidden></div>
+
+  <script src="dispatch.js"></script>
+</body>
+</html>

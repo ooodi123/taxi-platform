@@ -1,0 +1,6 @@
+backend/node_modules
+backend/dist
+backend/test
+.env
+backend/.env
+*.zip

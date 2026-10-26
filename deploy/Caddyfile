@@ -1,0 +1,26 @@
+# Caddy: HTTPS-сертификат от Let's Encrypt получается и продлевается автоматически.
+# Домен берётся из DOMAIN в .env. DNS-запись A домена должна указывать на этот сервер.
+{
+	email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+	encode gzip
+
+	# Корень сайта — диспетчерская
+	redir / /app/dispatch/ 302
+
+	# Заголовки безопасности. Mini App открывается внутри Telegram, поэтому
+	# встраивание в чужие фреймы не запрещаем глобально.
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+	# Диспетчерскую нельзя встраивать в чужие сайты
+	header /app/dispatch/* X-Frame-Options "DENY"
+
+	# API, сокеты и приложения — всё обслуживает бэкенд
+	reverse_proxy api:3000
+}

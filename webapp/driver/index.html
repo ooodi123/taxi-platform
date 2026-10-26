@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <title>Водитель</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <link rel="stylesheet" href="../app.css">
+  <link rel="stylesheet" href="driver.css">
+</head>
+<body>
+  <div id="map" aria-label="Карта"></div>
+
+  <button id="locate" class="locate" type="button" aria-label="Показать меня на карте">
+    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm8.94 3A9 9 0 0 0 13 3.06V1h-2v2.06A9 9 0 0 0 3.06 11H1v2h2.06A9 9 0 0 0 11 20.94V23h2v-2.06A9 9 0 0 0 20.94 13H23v-2h-2.06ZM12 19a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z"/></svg>
+  </button>
+
+  <!-- Строка состояния сверху: на линии / нет связи / нет геопозиции -->
+  <div id="statusbar" class="statusbar" hidden></div>
+
+  <section id="sheet" class="sheet" aria-live="polite"></section>
+
+  <!-- Предложение заказа: поверх всего, с таймером -->
+  <section id="offer" class="offer" hidden role="alertdialog" aria-labelledby="offerPrice"></section>
+
+  <!-- Выбор навигатора -->
+  <section id="navPicker" class="nav-picker" hidden>
+    <div class="nav-picker-card">
+      <h2>Открыть маршрут в</h2>
+      <div id="navLinks"></div>
+      <button type="button" class="btn secondary" id="navClose">Закрыть</button>
+    </div>
+  </section>
+
+  <div id="screen" class="screen" hidden></div>
+  <div id="toast" class="toast" role="status" hidden></div>
+
+  <script src="driver.js"></script>
+</body>
+</html>

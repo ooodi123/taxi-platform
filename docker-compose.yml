@@ -1,0 +1,104 @@
+# Платформа такси: всё на одном сервере.
+#   Первый запуск:  sudo ./deploy/install.sh   (или вручную: cp .env.example .env, заполнить, docker compose up -d --build)
+#   Обновление:     ./deploy/update.sh
+#
+# Снаружи открыты только порты 80 и 443 (Caddy). Сертификат HTTPS Caddy получает и продлевает сам.
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN:?Укажите DOMAIN в .env}
+      ACME_EMAIL: ${ACME_EMAIL:?Укажите ACME_EMAIL в .env}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      api: { condition: service_healthy }
+    logging: *logging
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://taxi:${POSTGRES_PASSWORD:?Укажите POSTGRES_PASSWORD в .env}@postgres:5432/taxi
+      REDIS_URL: redis://redis:6379
+      PUBLIC_URL: https://${DOMAIN}
+    expose:
+      - "3000"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    logging: *logging
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: taxi
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: taxi
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taxi"]
+      interval: 5s
+      retries: 20
+    logging: *logging
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "60", "1", "--appendonly", "no"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 20
+    logging: *logging
+
+  # Ежедневный бэкап базы в папку ./backups (хранятся BACKUP_KEEP_DAYS дней)
+  backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      PGHOST: postgres
+      PGUSER: taxi
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: taxi
+      KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+    volumes:
+      - ./backups:/backups
+      - ./deploy/backup-loop.sh:/backup-loop.sh:ro
+    entrypoint: ["/bin/sh", "/backup-loop.sh"]
+    depends_on:
+      postgres: { condition: service_healthy }
+    logging: *logging
+
+volumes:
+  pgdata:
+  redisdata:
+  caddy_data:
+  caddy_config:

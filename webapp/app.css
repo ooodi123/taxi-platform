@@ -1,0 +1,308 @@
+/*
+ * Mini App пассажира.
+ * Цвета берутся из темы Telegram (светлая/тёмная — как у пользователя),
+ * фирменный цвет — из брендинга таксопарка (--brand, ставит app.js).
+ */
+:root {
+  --bg: var(--tg-theme-bg-color, #ffffff);
+  --bg2: var(--tg-theme-secondary-bg-color, #f0f1f3);
+  --text: var(--tg-theme-text-color, #16181c);
+  --hint: var(--tg-theme-hint-color, #858b94);
+  --danger: var(--tg-theme-destructive-text-color, #d93c35);
+  --brand: #ffc72c;
+  --on-brand: #16181c;
+  --line: color-mix(in srgb, var(--text) 12%, transparent);
+  --radius-sheet: 22px;
+  --radius-control: 14px;
+  --shadow: 0 -6px 24px rgba(0, 0, 0, 0.14);
+  --safe-bottom: max(env(safe-area-inset-bottom), var(--tg-safe-area-inset-bottom, 0px));
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Roboto, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.35;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.tg) {
+    --bg: #1c1e22;
+    --bg2: #26292e;
+    --text: #f2f3f5;
+    --hint: #8f959e;
+  }
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; overflow: hidden; overscroll-behavior: none; }
+body { background: var(--bg); }
+button, input, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+[hidden] { display: none !important; }
+
+/* ---------- Карта ---------- */
+#map {
+  position: fixed;
+  inset: 0 0 var(--map-bottom, 280px) 0;
+  background: var(--bg2);
+  z-index: 0;
+}
+.leaflet-container { font: inherit; background: var(--bg2); }
+.leaflet-control-attribution { font-size: 10px; }
+:root.dark .leaflet-tile-pane { filter: brightness(0.72) contrast(1.1) saturate(0.7); }
+
+/* Пин — фирменная «шашка такси» на ножке. Подпрыгивает, пока двигают карту. */
+.pin {
+  position: fixed;
+  left: 50%;
+  top: calc((100% - var(--map-bottom, 280px)) / 2);
+  transform: translate(-50%, -100%);
+  z-index: 500;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.pin-sign {
+  width: 44px;
+  height: 30px;
+  border-radius: 8px 8px 6px 6px;
+  background:
+    linear-gradient(var(--brand), var(--brand)) center / 100% 100% no-repeat;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.28), inset 0 -6px 0 rgba(0, 0, 0, 0.08);
+  display: grid;
+  place-items: center;
+  position: relative;
+  transition: transform 0.18s ease;
+}
+/* полоса шашечек внизу знака */
+.pin-sign::after {
+  content: "";
+  position: absolute;
+  left: 4px; right: 4px; bottom: 4px;
+  height: 6px;
+  background: repeating-conic-gradient(var(--on-brand) 0 25%, transparent 0 50%) 0 0 / 6px 6px;
+  opacity: 0.85;
+  border-radius: 1px;
+}
+.pin-label { font-weight: 800; font-size: 14px; color: var(--on-brand); margin-top: -7px; }
+.pin-stem { width: 3px; height: 14px; background: var(--text); border-radius: 0 0 2px 2px; transition: height 0.18s ease; }
+.pin-shadow {
+  width: 10px; height: 4px; border-radius: 50%;
+  background: rgba(0, 0, 0, 0.35);
+  margin-top: -1px;
+  transition: transform 0.18s ease, opacity 0.18s ease;
+}
+.pin.lifted .pin-sign { transform: translateY(-10px); }
+.pin.lifted .pin-stem { height: 24px; margin-top: -10px; }
+.pin.lifted .pin-shadow { transform: scale(0.6); opacity: 0.5; }
+
+.locate {
+  position: fixed;
+  right: 14px;
+  bottom: calc(var(--map-bottom, 280px) + 14px);
+  z-index: 600;
+  width: 46px; height: 46px;
+  border-radius: 50%;
+  border: 0;
+  background: var(--bg);
+  color: var(--text);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  display: grid; place-items: center;
+}
+
+/* Маркеры точек маршрута и машины */
+.mk-point {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--text); color: var(--bg);
+  display: grid; place-items: center;
+  font-weight: 800; font-size: 13px;
+  border: 3px solid var(--bg);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+.mk-point.b { border-radius: 7px; }
+.mk-car {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--brand); color: var(--on-brand);
+  display: grid; place-items: center;
+  border: 3px solid var(--bg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+.mk-car svg { width: 18px; height: 18px; }
+
+/* ---------- Нижняя шторка ---------- */
+.sheet {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 700;
+  background: var(--bg);
+  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+  box-shadow: var(--shadow);
+  padding: 8px 16px calc(16px + var(--safe-bottom));
+  max-height: 78vh;
+  overflow-y: auto;
+}
+.sheet::before {
+  content: "";
+  display: block;
+  width: 36px; height: 4px; border-radius: 2px;
+  background: var(--line);
+  margin: 0 auto 12px;
+}
+.sheet h1 { font-size: 22px; line-height: 1.2; font-weight: 750; margin: 2px 0 4px; letter-spacing: -0.01em; }
+.sheet .sub { color: var(--hint); margin: 0 0 14px; font-size: 15px; }
+
+/* Маршрут: две точки, связанные линией — это последовательность «откуда → куда» */
+.route { list-style: none; margin: 0 0 14px; padding: 0; background: var(--bg2); border-radius: var(--radius-control); }
+.route li { position: relative; }
+.route li + li::before {
+  content: ""; position: absolute; left: 20px; right: 14px; top: 0; border-top: 1px solid var(--line);
+  margin-left: 26px;
+}
+.route-row {
+  display: flex; align-items: center; gap: 12px;
+  width: 100%; min-height: 54px; padding: 8px 14px;
+  background: none; border: 0; text-align: left;
+}
+.route-dot { flex: 0 0 auto; width: 12px; height: 12px; margin: 0 7px; border-radius: 50%; border: 3px solid var(--text); }
+.route-dot.b { border-radius: 3px; background: var(--text); }
+.route li:first-child .route-dot::after {
+  content: ""; position: absolute; left: 26px; top: 38px; height: 24px; width: 0;
+  border-left: 2px dotted var(--hint);
+}
+.route-text { min-width: 0; flex: 1; }
+.route-title { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+.route-title.empty { color: var(--hint); font-weight: 500; }
+.route-sub { display: block; font-size: 13px; color: var(--hint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Тарифы */
+.tariffs { display: flex; gap: 10px; overflow-x: auto; margin: 0 -16px 12px; padding: 2px 16px 4px; scrollbar-width: none; }
+.tariffs::-webkit-scrollbar { display: none; }
+.tariff {
+  flex: 0 0 auto; min-width: 120px;
+  padding: 12px 14px; border-radius: var(--radius-control);
+  background: var(--bg2); border: 2px solid transparent;
+  text-align: left;
+}
+.tariff[aria-pressed="true"] { border-color: var(--brand); background: color-mix(in srgb, var(--brand) 14%, var(--bg)); }
+.tariff-name { display: block; font-size: 14px; color: var(--hint); }
+.tariff[aria-pressed="true"] .tariff-name { color: var(--text); }
+.tariff-price { display: block; font-size: 21px; font-weight: 750; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.trip-meta { color: var(--hint); font-size: 14px; margin: -4px 0 12px; }
+
+.field {
+  display: block; width: 100%;
+  padding: 13px 14px; border-radius: var(--radius-control);
+  border: 0; background: var(--bg2);
+  margin-bottom: 10px;
+}
+.field::placeholder { color: var(--hint); }
+
+/* Кнопки */
+.btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; min-height: 54px; padding: 0 18px;
+  border: 0; border-radius: var(--radius-control);
+  font-size: 17px; font-weight: 700;
+  background: var(--brand); color: var(--on-brand);
+}
+.btn:disabled { opacity: 0.5; }
+.btn.secondary { background: var(--bg2); color: var(--text); font-weight: 600; }
+.btn.danger { background: none; color: var(--danger); font-weight: 600; min-height: 46px; }
+.btn + .btn { margin-top: 8px; }
+.btn .price { font-variant-numeric: tabular-nums; opacity: 0.85; font-weight: 600; }
+
+/* ---------- Экран заказа ---------- */
+/* Поиск машины: бегущая полоса шашечек — единственная «живая» анимация в приложении */
+.searching-strip {
+  height: 8px; border-radius: 4px; margin: 4px 0 16px;
+  background: repeating-conic-gradient(var(--text) 0 25%, var(--brand) 0 50%) 0 0 / 8px 8px;
+  animation: checker 1.2s linear infinite;
+}
+@keyframes checker { to { background-position: 32px 0; } }
+
+.driver { display: flex; align-items: center; gap: 12px; margin: 4px 0 14px; }
+.driver-info { flex: 1; min-width: 0; }
+.driver-car { font-weight: 650; }
+.driver-name { color: var(--hint); font-size: 14px; }
+/* Номер машины — как настоящий номерной знак: его ищут глазами на улице */
+.plate {
+  flex: 0 0 auto;
+  display: inline-flex; align-items: center;
+  padding: 4px 9px; border-radius: 6px;
+  background: #fff; color: #111;
+  border: 2px solid #111;
+  font-weight: 800; font-size: 18px; letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+}
+.call {
+  flex: 0 0 auto; width: 46px; height: 46px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--bg2); color: var(--text); text-decoration: none;
+}
+.summary { background: var(--bg2); border-radius: var(--radius-control); padding: 4px 14px; margin-bottom: 14px; }
+.summary-row { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; }
+.summary-row + .summary-row { border-top: 1px solid var(--line); }
+.summary-row span:first-child { color: var(--hint); }
+.summary-row span:last-child { text-align: right; font-weight: 600; }
+.total { font-size: 34px; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; margin: 0 0 4px; }
+
+/* ---------- Поиск адреса ---------- */
+.search {
+  position: fixed; inset: 0; z-index: 900;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+}
+.search-bar { display: flex; align-items: center; gap: 6px; padding: 10px 12px 8px 6px; }
+.search-back { width: 42px; height: 42px; border: 0; background: none; display: grid; place-items: center; }
+.search-bar input {
+  flex: 1; min-width: 0;
+  padding: 12px 14px; border: 0; border-radius: var(--radius-control);
+  background: var(--bg2); outline: none; font-size: 17px;
+}
+.search-onmap {
+  margin: 4px 16px 6px; padding: 12px 14px;
+  border: 0; border-radius: var(--radius-control);
+  background: none; color: var(--tg-theme-link-color, #2a7ae2);
+  text-align: left; font-weight: 600;
+}
+.search-results { list-style: none; margin: 0; padding: 0 0 var(--safe-bottom); overflow-y: auto; flex: 1; }
+.search-results button {
+  width: 100%; text-align: left; border: 0; background: none;
+  padding: 12px 16px;
+}
+.search-results li + li button { border-top: 1px solid var(--line); }
+.search-results .muted { padding: 16px; color: var(--hint); }
+
+/* ---------- Полноэкранные состояния: загрузка, ошибка ---------- */
+.screen {
+  position: fixed; inset: 0; z-index: 1000;
+  background: var(--bg);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 32px; text-align: center;
+}
+.screen h1 { font-size: 22px; margin: 16px 0 8px; }
+.screen p { color: var(--hint); margin: 0 0 20px; max-width: 32ch; }
+.screen .btn { max-width: 320px; }
+.spinner {
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 3px solid var(--line); border-top-color: var(--brand);
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.toast {
+  position: fixed; left: 16px; right: 16px; top: calc(12px + env(safe-area-inset-top));
+  z-index: 1100;
+  padding: 12px 16px; border-radius: var(--radius-control);
+  background: var(--text); color: var(--bg);
+  font-size: 15px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .searching-strip { animation: none; }
+  .spinner { animation-duration: 2s; }
+  .pin-sign, .pin-stem, .pin-shadow { transition: none; }
+}
