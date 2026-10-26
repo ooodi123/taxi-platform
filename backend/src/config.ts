@@ -10,11 +10,15 @@ function num(name: string, def: number): number {
 
 const DEFAULT_JWT_SECRET = 'dev-secret-change-me';
 
-/** REDIS_URL, либо отдельные REDIS_HOST / REDIS_PORT / REDIS_PASSWORD (так их дают некоторые хостинги) */
+/**
+ * REDIS_URL, либо отдельные REDIS_HOST / REDIS_PORT / REDIS_PASSWORD (так их дают некоторые хостинги).
+ * REDIS_URL=memory — работать без Redis, в памяти процесса.
+ */
 function redisUrlFromEnv(): string {
   if (process.env.REDIS_URL) return process.env.REDIS_URL;
   const host = process.env.REDIS_HOST;
-  if (!host) return 'redis://localhost:6379';
+  // ничего не задано: в разработке — локальный Redis, на хостинге без Redis — память процесса
+  if (!host) return process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('@localhost') ? 'memory' : 'redis://localhost:6379';
   const port = process.env.REDIS_PORT || '6379';
   const user = process.env.REDIS_USER || process.env.REDIS_USERNAME || '';
   const pass = process.env.REDIS_PASSWORD || '';

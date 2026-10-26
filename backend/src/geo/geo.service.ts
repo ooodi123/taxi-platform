@@ -56,10 +56,10 @@ export class GeoService {
 
   private async cached(kind: string, params: URLSearchParams, load: () => Promise<unknown>) {
     const key = `geo:${kind}:${createHash('sha1').update(params.toString()).digest('hex')}`;
-    const hit = await this.redis.client.get(key).catch(() => null);
+    const hit = await this.redis.cacheGet(key).catch(() => null);
     if (hit) return JSON.parse(hit);
     const value = await load();
-    await this.redis.client.set(key, JSON.stringify(value), 'EX', CACHE_TTL_SEC).catch(() => undefined);
+    await this.redis.cacheSet(key, JSON.stringify(value), CACHE_TTL_SEC).catch(() => undefined);
     return value;
   }
 

@@ -21,7 +21,7 @@ class HealthController {
   @Get()
   async health() {
     await this.db.one('SELECT 1');
-    await this.redis.client.ping();
+    await this.redis.ping();
     return { ok: true, time: new Date().toISOString() };
   }
 }
