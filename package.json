@@ -1,11 +1,31 @@
 {
   "name": "taxi-platform",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "private": true,
-  "description": "White-label платформа такси. Запуск без Docker: npm install && npm start",
-  "engines": { "node": ">=20" },
+  "description": "White-label платформа такси. Хостинг без Docker: npm install --omit=dev && node index.js (сервер уже собран в backend/dist)",
+  "main": "index.js",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
-    "postinstall": "npm --prefix backend install --include=dev --no-audit --no-fund && npm --prefix backend run build",
-    "start": "node index.js"
+    "start": "node index.js",
+    "build:dist": "node backend/scripts/build-dist.js"
+  },
+  "dependencies": {
+    "@nestjs/common": "^10.4.0",
+    "@nestjs/core": "^10.4.0",
+    "@nestjs/jwt": "^10.2.0",
+    "@nestjs/platform-express": "^10.4.0",
+    "@nestjs/platform-socket.io": "^10.4.0",
+    "@nestjs/websockets": "^10.4.0",
+    "bcryptjs": "^2.4.3",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1",
+    "dotenv": "^16.4.5",
+    "ioredis": "^5.4.1",
+    "pg": "^8.12.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
+    "socket.io": "^4.7.5"
   }
 }
